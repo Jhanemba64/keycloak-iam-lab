@@ -1,0 +1,12 @@
+# Secrets du laboratoire
+.env
+
+# Terraform (l'état contient les mots de passe de test)
+.terraform/
+*.tfstate
+*.tfstate.*
+
+# Node et Playwright
+node_modules/
+test-results/
+playwright-report/

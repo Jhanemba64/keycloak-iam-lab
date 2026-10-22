@@ -1,0 +1,62 @@
+# Mises à jour proposées chaque mois, regroupées par écosystème ; montées majeures laissées à
+# une décision manuelle. Les correctifs de sécurité sont proposés dès leur publication.
+
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns: ["*"]
+
+  # Images Keycloak et PostgreSQL
+  - package-ecosystem: docker-compose
+    directory: /
+    schedule:
+      interval: monthly
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
+  # Application Notes : dépendances npm et image de base
+  - package-ecosystem: npm
+    directory: /app
+    schedule:
+      interval: monthly
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    groups:
+      app:
+        patterns: ["*"]
+
+  - package-ecosystem: docker
+    directory: /app
+    schedule:
+      interval: monthly
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
+  # Tests Playwright (lab.sh prend l'image Docker de la même version)
+  - package-ecosystem: npm
+    directory: /tests
+    schedule:
+      interval: monthly
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    groups:
+      tests:
+        patterns: ["*"]
+
+  # Providers Keycloak et random
+  - package-ecosystem: terraform
+    directory: /terraform
+    schedule:
+      interval: monthly
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]

@@ -1,0 +1,19 @@
+{
+  "name": "notes-web",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Application de démonstration : client OIDC confidentiel en modèle BFF",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "dependencies": {
+    "express": "^5.3.0",
+    "express-session": "^1.19.0",
+    "openid-client": "^6.8.8"
+  }
+}

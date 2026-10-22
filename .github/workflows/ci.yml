@@ -1,0 +1,119 @@
+# Intégration continue : qualité et sécurité du code, puis laboratoire complet démarré
+# et testé de bout en bout dans un navigateur.
+# Les actions sont épinglées par SHA de commit et les images d'outils par digest.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  terraform:
+    name: Terraform (fmt, validate, TFLint)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+
+      - name: Format
+        run: terraform fmt -check -recursive
+
+      - name: Validation
+        run: |
+          terraform init -backend=false -input=false
+          terraform validate
+
+      - name: TFLint
+        run: >-
+          docker run --rm -v "$PWD:/data" -w /data
+          ghcr.io/terraform-linters/tflint:v0.64.0@sha256:1c595f42d794c32c45a6ea8b58655fd66433d4ca3b1bc631c574a48d120bd19f
+          --format compact
+
+  app:
+    name: Application (Hadolint, Checkov, audit npm, Trivy)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Hadolint
+        uses: hadolint/hadolint-action@06be81baf89a55ffd0e24b8f04a4185738dd3387 # v3.5.0
+        with:
+          dockerfile: app/Dockerfile
+
+      - name: Checkov (Dockerfile et workflows)
+        run: >-
+          docker run --rm -v "$PWD:/src" -w /src
+          bridgecrew/checkov:3.3.30@sha256:4b65e89f1fde292249fc0aa0d0db43302c036dfe39f7370b2d3517571082b894
+          -d . --framework dockerfile github_actions --compact --quiet
+
+      - name: Audit des dépendances
+        run: |
+          (cd app && npm audit --omit=dev --audit-level=high)
+          (cd tests && npm audit --audit-level=high)
+
+      - name: Construction de l'image
+        run: docker build -t notes-web:ci app
+
+      # Bloquant sur les vulnérabilités critiques et élevées pour lesquelles un correctif existe
+      - name: Scan Trivy
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: notes-web:ci
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "1"
+
+  e2e:
+    name: Laboratoire complet et tests de bout en bout
+    needs: [terraform, app]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_wrapper: false
+
+      # Keycloak + PostgreSQL, realm configuré par Terraform, application Notes
+      - name: Démarrage du laboratoire
+        run: ./lab.sh up
+
+      # Parcours utilisateur, passkeys, anti-force brute et garde-fous du protocole (Playwright)
+      - name: Tests de bout en bout
+        run: ./lab.sh test
+
+      - name: Journaux des conteneurs
+        if: ${{ failure() }}
+        run: docker compose logs --no-color
+
+      - name: Rapport Playwright
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: playwright-report
+          path: tests/playwright-report
+          retention-days: 7
+
+      - name: Arrêt du laboratoire
+        if: ${{ always() }}
+        run: ./lab.sh reset
