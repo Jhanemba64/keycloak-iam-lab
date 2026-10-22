@@ -1,10 +1,12 @@
 # Mises à jour proposées chaque mois, regroupées par écosystème ; montées majeures laissées à
 # une décision manuelle. Les correctifs de sécurité sont proposés dès leur publication.
+# Les PR visent dev, puis suivent la promotion dev → preprod → main.
 
 version: 2
 updates:
   - package-ecosystem: github-actions
     directory: /
+    target-branch: dev
     schedule:
       interval: monthly
     groups:
@@ -14,6 +16,7 @@ updates:
   # Images Keycloak et PostgreSQL
   - package-ecosystem: docker-compose
     directory: /
+    target-branch: dev
     schedule:
       interval: monthly
     ignore:
@@ -23,6 +26,7 @@ updates:
   # Application Notes : dépendances npm et image de base
   - package-ecosystem: npm
     directory: /app
+    target-branch: dev
     schedule:
       interval: monthly
     ignore:
@@ -34,6 +38,7 @@ updates:
 
   - package-ecosystem: docker
     directory: /app
+    target-branch: dev
     schedule:
       interval: monthly
     ignore:
@@ -43,6 +48,7 @@ updates:
   # Tests Playwright (lab.sh prend l'image Docker de la même version)
   - package-ecosystem: npm
     directory: /tests
+    target-branch: dev
     schedule:
       interval: monthly
     ignore:
@@ -55,6 +61,7 @@ updates:
   # Providers Keycloak et random
   - package-ecosystem: terraform
     directory: /terraform
+    target-branch: dev
     schedule:
       interval: monthly
     ignore:
