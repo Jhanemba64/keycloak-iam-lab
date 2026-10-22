@@ -18,6 +18,24 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # main n'accepte que des PR venant de preprod, et preprod que des PR venant de dev
+  promotion:
+    name: Circuit de promotion
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Branche source autorisée
+        env:
+          BASE: ${{ github.base_ref }}
+          HEAD: ${{ github.head_ref }}
+        run: |
+          case "$BASE:$HEAD" in
+            main:preprod | preprod:dev) echo "Promotion $HEAD → $BASE autorisée" ;;
+            main:*) echo "::error::main n'accepte que les PR depuis preprod" && exit 1 ;;
+            preprod:*) echo "::error::preprod n'accepte que les PR depuis dev" && exit 1 ;;
+            *) echo "PR vers $BASE : pas de contrainte de source" ;;
+          esac
+
   terraform:
     name: Terraform (fmt, validate, TFLint)
     runs-on: ubuntu-latest
