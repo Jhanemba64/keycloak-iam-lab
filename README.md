@@ -135,7 +135,10 @@ rejouables à volonté.
 | `preprod` | validation avant mise en production | pull request depuis `dev`, CI verte obligatoire |
 | `main` | version stable, affichée par défaut | pull request depuis `preprod`, CI verte obligatoire |
 
-Des règles GitHub interdisent sur les trois branches la suppression et la réécriture d'historique.
+Des règles GitHub interdisent sur les trois branches la suppression et la réécriture d'historique, et
+imposent pour `preprod` et `main` une pull request dont toute la CI est verte. Le contrôle « Circuit de
+promotion » de la CI refuse une PR vers `main` qui ne vient pas de `preprod`, ou vers `preprod` qui ne
+vient pas de `dev`.
 
 ## Intégration continue
 
