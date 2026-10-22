@@ -127,9 +127,20 @@ Les tests [Playwright](tests/e2e) tournent dans un vrai Chromium, contre le labo
 Un script de préparation remet les comptes de test à zéro par l'API d'administration : les tests sont
 rejouables à volonté.
 
+## Branches et promotion
+
+| Branche | Rôle | Alimentée par |
+|---|---|---|
+| `dev` | intégration : chaque modification y arrive d'abord | push ou pull request (Dependabot compris) |
+| `preprod` | validation avant mise en production | pull request depuis `dev`, CI verte obligatoire |
+| `main` | version stable, affichée par défaut | pull request depuis `preprod`, CI verte obligatoire |
+
+Des règles GitHub interdisent sur les trois branches la suppression et la réécriture d'historique.
+
 ## Intégration continue
 
-Le workflow [`ci.yml`](.github/workflows/ci.yml) vérifie à chaque push :
+Le workflow [`ci.yml`](.github/workflows/ci.yml) vérifie chaque push sur `dev`, `preprod` et `main`, et
+chaque pull request :
 
 - le Terraform (`fmt`, `validate`, TFLint) ;
 - l'application : Hadolint, Checkov, audit des dépendances npm, scan Trivy de l'image (image multi-étapes
